@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CyberTrace — Bank & CDR Intelligence Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg-base: #f4f5f7;
+    --bg-surface: #ffffff;
+    --bg-sidebar: #0f1b2d;
+    --bg-sidebar-hover: #1a2d45;
+    --bg-sidebar-active: #1e3a5f;
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --text-muted: #9ca3af;
+    --text-sidebar: #c8d6e5;
+    --text-sidebar-active: #ffffff;
+    --border: #e5e7eb;
+    --border-subtle: #f0f1f3;
+    --accent: #1e5fad;
+    --accent-light: #dbeafe;
+    --accent-hover: #1a52961a;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+    --shadow-lg: 0 10px 24px rgba(0,0,0,0.1), 0 4px 8px rgba(0,0,0,0.05);
+  }
+  html.dark {
+    --bg-base: #0b0f1a;
+    --bg-surface: #111827;
+    --bg-sidebar: #070b14;
+    --bg-sidebar-hover: #111827;
+    --bg-sidebar-active: #1e3a5f;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --border: #1e293b;
+    --border-subtle: #1a2234;
+    --accent-light: #172554;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+    --shadow-lg: 0 10px 24px rgba(0,0,0,0.5);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Roboto', sans-serif;
+    background: var(--bg-base);
+    color: var(--text-primary);
+    transition: background 0.25s ease, color 0.25s ease;
+  }
+  .sidebar {
+    background: var(--bg-sidebar);
+    width: 220px;
+    min-height: 100vh;
+    position: fixed;
+    top: 0; left: 0;
+    display: flex;
+    flex-direction: column;
+    z-index: 50;
+    transition: background 0.25s;
+  }
+  .sidebar-logo {
+    padding: 22px 20px 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .sidebar-logo .logo-mark {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: #1e5fad;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-name { color: #fff; font-size: 15px; font-weight: 700; letter-spacing: 0.3px; }
+  .logo-sub { color: rgba(255,255,255,0.35); font-size: 10px; font-weight: 400; letter-spacing: 1.2px; text-transform: uppercase; margin-top: 1px; }
+  .nav-section {
+    padding: 20px 12px 0;
+    flex: 1;
+  }
+  .nav-label {
+    color: rgba(255,255,255,0.25);
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    padding: 0 8px 8px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px;
+    border-radius: 7px;
+    cursor: pointer;
+    color: var(--text-sidebar);
+    font-size: 13.5px;
+    font-weight: 400;
+    transition: background 0.15s, color 0.15s;
+    margin-bottom: 2px;
+    user-select: none;
+  }
+  .nav-item:hover { background: var(--bg-sidebar-hover); color: #fff; }
+  .nav-item.active { background: var(--bg-sidebar-active); color: var(--text-sidebar-active); font-weight: 500; }
+  .nav-item svg { opacity: 0.7; flex-shrink: 0; }
+  .nav-item.active svg { opacity: 1; }
+  .sidebar-footer {
+    padding: 14px 12px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .main-wrapper { margin-left: 220px; display: flex; flex-direction: column; min-height: 100vh; }
+  .topbar {
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
+    height: 58px;
+    display: flex; align-items: center;
+    padding: 0 24px;
+    gap: 16px;
+    position: sticky; top: 0; z-index: 40;
+    box-shadow: var(--shadow-sm);
+    transition: background 0.25s, border-color 0.25s;
+  }
+  .search-bar {
+    flex: 1; max-width: 340px;
+    position: relative;
+  }
+  .search-bar input {
+    width: 100%;
+    background: var(--bg-base);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 12px 7px 36px;
+    font-size: 13px;
+    font-family: 'Roboto', sans-serif;
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.15s, background 0.25s;
+  }
+  .search-bar input:focus { border-color: var(--accent); }
+  .search-bar input::placeholder { color: var(--text-muted); }
+  .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+  .topbar-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+  .icon-btn {
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    color: var(--text-secondary);
+    background: transparent;
+    border: none;
+    transition: background 0.15s, color 0.15s;
+  }
+  .icon-btn:hover { background: var(--bg-base); color: var(--text-primary); }
+  .badge-dot {
+    width: 7px; height: 7px;
+    background: #ef4444;
+    border-radius: 50%;
+    position: absolute; top: 4px; right: 4px;
+    border: 2px solid var(--bg-surface);
+  }
+  .profile-btn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 10px 4px 4px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .profile-btn:hover { background: var(--bg-base); }
+  .avatar {
+    width: 30px; height: 30px;
+    background: #1e5fad;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .profile-name { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+  .page-content { padding: 24px; flex: 1; }
+  .section-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.1px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+  .card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: var(--shadow-sm);
+    transition: background 0.25s, border-color 0.25s, box-shadow 0.2s;
+  }
+  .card:hover { box-shadow: var(--shadow-md); }
+  .stat-card {
+    padding: 18px 20px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .stat-label { font-size: 12px; color: var(--text-secondary); font-weight: 400; }
+  .stat-value { font-size: 24px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.5px; }
+  .stat-delta { font-size: 12px; font-weight: 500; }
+  .stat-delta.up { color: #16a34a; }
+  .stat-delta.down { color: #dc2626; }
+  .stat-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 8px;
+  }
+  /* Upload zone */
+  .upload-zone {
+    border: 1.5px dashed var(--border);
+    border-radius: 10px;
+    padding: 28px 20px;
+    text-align: center;
+    transition: border-color 0.2s, background 0.2s;
+    cursor: pointer;
+  }
+  .upload-zone:hover { border-color: var(--accent); background: var(--accent-hover); }
+  /* Risk badges */
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 9px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .badge-high { background: #fee2e2; color: #b91c1c; }
+  .badge-medium { background: #fef9c3; color: #92400e; }
+  .badge-low { background: #dcfce7; color: #166534; }
+  html.dark .badge-high { background: #450a0a; color: #fca5a5; }
+  html.dark .badge-medium { background: #422006; color: #fde68a; }
+  html.dark .badge-low { background: #052e16; color: #86efac; }
+  /* Table */
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-base);
+  }
+  html.dark thead th { background: #0d131f; }
+  tbody tr { transition: background 0.1s; }
+  tbody tr:hover { background: var(--bg-base); }
+  tbody td {
+    padding: 11px 14px;
+    font-size: 13px;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-subtle);
+    font-family: 'Roboto Mono', monospace;
+  }
+  tbody td.text-normal { font-family: 'Roboto', sans-serif; }
+  /* Money Trail */
+  .trail-container { overflow-x: auto; padding: 10px 0; }
+  .trail-svg { display: block; }
+  /* Toggle */
+  .toggle-track {
+    width: 38px; height: 21px;
+    background: var(--border);
+    border-radius: 99px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .toggle-track.on { background: #1e5fad; }
+  .toggle-thumb {
+    width: 15px; height: 15px;
+    background: #fff;
+    border-radius: 50%;
+    position: absolute;
+    top: 3px; left: 3px;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .toggle-track.on .toggle-thumb { transform: translateX(17px); }
+  /* Loading spinner */
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+  /* Upload progress */
+  .progress-bar-track {
+    background: var(--border);
+    border-radius: 99px;
+    height: 4px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: #1e5fad;
+    border-radius: 99px;
+    transition: width 0.4s ease;
+  }
+  /* Transition all cards */
+  .fade-in { animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  /* Status dot */
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+  .status-dot.flagged { background: #ef4444; }
+  .status-dot.normal { background: #22c55e; }
+  .status-dot.pending { background: #f59e0b; }
+  /* Alert item */
+  .alert-item {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+    transition: background 0.1s;
+  }
+  .alert-item:hover { background: var(--bg-base); }
+  .alert-item:last-child { border-bottom: none; }
+  .alert-icon-wrap {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .upload-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 9px 18px;
+    background: #1e5fad;
+    color: #fff;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: 'Roboto', sans-serif;
+    cursor: pointer;
+    border: none;
+    transition: background 0.15s;
+  }
+  .upload-btn:hover { background: #1a52961a; background: #1752a0; }
+  .upload-btn:disabled { opacity: 0.65; cursor: not-allowed; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px;
+    background: var(--accent-light);
+    color: var(--accent);
+    border-radius: 5px;
+    font-size: 11.5px;
+    font-weight: 500;
+  }
+  html.dark .chip { color: #93c5fd; }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">
+      <div class="logo-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-name">CyberTrace</div>
+        <div class="logo-sub">Intelligence Portal</div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="nav-section">
+    <div class="nav-label">Workspace</div>
+    <div class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard', this)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item" data-page="analysis" onclick="switchPage('analysis', this)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Analysis
+    </div>
+    <div class="nav-item" data-page="cases" onclick="switchPage('cases', this)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      Cases
+    </div>
+    <div class="nav-item" data-page="reports" onclick="switchPage('reports', this)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Reports
+    </div>
+
+    <div class="nav-label" style="margin-top:20px;">Configuration</div>
+    <div class="nav-item" data-page="settings" onclick="switchPage('settings', this)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;">
+      <div style="width:28px;height:28px;border-radius:50%;background:#1e3a5f;display:flex;align-items:center;justify-content:center;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+      <div>
+        <div style="font-size:12px;color:#c8d6e5;font-weight:500;">Arjun Mehta</div>
+        <div style="font-size:10.5px;color:rgba(255,255,255,0.3);">IO / Level 2</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- Main wrapper -->
+<div class="main-wrapper">
+
+  <!-- Top bar -->
+  <header class="topbar">
+    <div class="search-bar">
+      <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search accounts, cases, transactions…" id="searchInput" />
+    </div>
+
+    <div class="topbar-right">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <div class="toggle-track" id="darkToggle" onclick="toggleDark()">
+          <div class="toggle-thumb"></div>
+        </div>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </div>
+
+      <div style="width:1px;height:22px;background:var(--border);margin:0 4px;"></div>
+
+      <button class="icon-btn" style="position:relative;" title="Alerts">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <div class="badge-dot"></div>
+      </button>
+
+      <div class="profile-btn">
+        <div class="avatar">AM</div>
+        <span class="profile-name">Arjun M.</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+  </header>
+
+  <!-- Page content -->
+  <main class="page-content" id="pageContent">
+
+    <!-- DASHBOARD PAGE -->
+    <div id="page-dashboard" class="fade-in">
+
+      <!-- Page header -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;">
+        <div>
+          <h1 style="font-size:18px;font-weight:700;color:var(--text-primary);letter-spacing:-0.3px;">Bank &amp; CDR Intelligence Dashboard</h1>
+          <p style="font-size:13px;color:var(--text-secondary);margin-top:3px;">Case #2024-HYD-0391 · Active Investigation · Updated 14 min ago</p>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="upload-btn" id="uploadBankBtn" onclick="handleUpload('bank')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Upload Bank CSV
+          </button>
+          <button class="upload-btn" id="uploadCDRBtn" onclick="handleUpload('cdr')" style="background:#0f4c75;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6 6l.9-.9a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            Upload CDR
+          </button>
+        </div>
+      </div>
+
+      <!-- Upload progress area -->
+      <div id="uploadProgress" style="display:none;margin-bottom:18px;" class="card" style="padding:14px 18px;">
+        <div style="padding:14px 18px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <span style="font-size:13px;font-weight:500;color:var(--text-primary);" id="uploadLabel">Processing bank_statement_march.csv…</span>
+            <span style="font-size:12px;color:var(--text-secondary);" id="uploadPct">0%</span>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+          </div>
+          <p style="font-size:11.5px;color:var(--text-muted);margin-top:7px;" id="uploadStatus">Parsing records…</p>
+        </div>
+      </div>
+
+      <!-- Stat row -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;" id="statsGrid">
+        <div class="card stat-card">
+          <div class="stat-icon" style="background:#dbeafe;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1e5fad" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          </div>
+          <div class="stat-label">Total Transactions</div>
+          <div class="stat-value" id="stat-txn">—</div>
+          <div class="stat-delta" id="delta-txn"></div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-icon" style="background:#fee2e2;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <div class="stat-label">Red Flag Alerts</div>
+          <div class="stat-value" id="stat-flags">—</div>
+          <div class="stat-delta" id="delta-flags"></div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-icon" style="background:#dcfce7;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <div class="stat-label">Total Amount (₹)</div>
+          <div class="stat-value" id="stat-amount">—</div>
+          <div class="stat-delta" id="delta-amount"></div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-icon" style="background:#fef9c3;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="stat-label">Unique Accounts</div>
+          <div class="stat-value" id="stat-accounts">—</div>
+          <div class="stat-delta" id="delta-accounts"></div>
+        </div>
+      </div>
+
+      <!-- Charts row -->
+      <div style="display:grid;grid-template-columns:1fr 2fr;gap:14px;margin-bottom:20px;">
+        <div class="card" style="padding:18px 18px 14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <span style="font-size:13px;font-weight:600;color:var(--text-primary);">Transaction Distribution</span>
+            <span class="chip">Bank CSV</span>
+          </div>
+          <div style="height:200px;display:flex;align-items:center;justify-content:center;">
+            <canvas id="pieChart"></canvas>
+          </div>
+          <div id="piePlaceholder" style="text-align:center;padding:40px 0;">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--border)" stroke-width="1.5" style="margin:auto;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <p style="font-size:12px;color:var(--text-muted);margin-top:10px;">Upload data to generate chart</p>
+          </div>
+        </div>
+        <div class="card" style="padding:18px 18px 14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <span style="font-size:13px;font-weight:600;color:var(--text-primary);">Transaction Volume Over Time</span>
+            <span class="chip">30 Days</span>
+          </div>
+          <div style="height:200px;display:flex;align-items:center;justify-content:center;">
+            <canvas id="barChart"></canvas>
+          </div>
+          <div id="barPlaceholder" style="text-align:center;padding:40px 0;">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--border)" stroke-width="1.5" style="margin:auto;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            <p style="font-size:12px;color:var(--text-muted);margin-top:10px;">Upload data to generate chart</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Money trail + Red flags -->
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:20px;">
+
+        <!-- Money trail -->
+        <div class="card" style="padding:18px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--text-primary);">Money Trail Visualization</div>
+              <div style="font-size:11.5px;color:var(--text-secondary);margin-top:2px;">Multi-layer fund movement · 4 layers detected</div>
+            </div>
+            <span class="badge badge-high">Suspicious Pattern</span>
+          </div>
+          <div id="trailPlaceholder" style="text-align:center;padding:50px 0;">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--border)" stroke-width="1.5" style="margin:auto;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            <p style="font-size:12px;color:var(--text-muted);margin-top:10px;">Upload bank CSV to trace fund flow</p>
+          </div>
+          <div class="trail-container" id="trailContainer" style="display:none;">
+            <svg id="trailSvg" class="trail-svg"></svg>
+          </div>
+        </div>
+
+        <!-- Red flags -->
+        <div class="card">
+          <div style="padding:14px 16px;border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:13px;font-weight:600;color:var(--text-primary);">Red Flag Alerts</span>
+            <span style="font-size:11px;color:var(--text-muted);" id="flagCount">0 alerts</span>
+          </div>
+          <div id="flagsBody">
+            <div style="padding:36px 16px;text-align:center;">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--border)" stroke-width="1.5" style="margin:auto;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+              <p style="font-size:12px;color:var(--text-muted);margin-top:10px;">No alerts yet</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Transactions table -->
+      <div class="card" style="margin-bottom:10px;">
+        <div style="padding:14px 16px;border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:13px;font-weight:600;color:var(--text-primary);">Transaction Records</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:11.5px;color:var(--text-muted);" id="txnCount">No data loaded</span>
+            <button onclick="filterTable()" style="padding:5px 12px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--bg-surface);color:var(--text-secondary);cursor:pointer;font-family:'Roboto',sans-serif;" id="filterBtn">Show All</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Account No.</th>
+                <th>Beneficiary</th>
+                <th>Amount (₹)</th>
+                <th>Date &amp; Time</th>
+                <th>Type</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="txnBody">
+              <tr><td colspan="6" class="text-normal" style="text-align:center;padding:40px;color:var(--text-muted);">Upload a bank CSV file to populate transaction records.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /dashboard -->
+
+    <!-- ANALYSIS PAGE (placeholder) -->
+    <div id="page-analysis" style="display:none;" class="fade-in">
+      <h1 style="font-size:18px;font-weight:700;margin-bottom:6px;">Analysis</h1>
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:24px;">Deep-dive into individual account patterns and call detail records.</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+        <div class="card" style="padding:20px;">
+          <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.8px;">CDR Pattern Engine</div>
+          <div style="font-size:14px;color:var(--text-primary);margin-bottom:12px;">Frequency &amp; co-location analysis for 24 phone numbers.</div>
+          <span class="badge badge-medium">In Progress</span>
+        </div>
+        <div class="card" style="padding:20px;">
+          <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.8px;">Network Graph</div>
+          <div style="font-size:14px;color:var(--text-primary);margin-bottom:12px;">Entity relationship mapping across 6 bank accounts.</div>
+          <span class="badge badge-low">Ready</span>
+        </div>
+        <div class="card" style="padding:20px;">
+          <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.8px;">Geolocation Trace</div>
+          <div style="font-size:14px;color:var(--text-primary);margin-bottom:12px;">Tower-based location mapping pending CDR upload.</div>
+          <span class="badge badge-medium">Pending Data</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CASES PAGE -->
+    <div id="page-cases" style="display:none;" class="fade-in">
+      <h1 style="font-size:18px;font-weight:700;margin-bottom:6px;">Cases</h1>
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:24px;">Active and archived cybercrime investigation cases.</p>
+      <div class="card">
+        <table>
+          <thead><tr><th>Case ID</th><th>Subject</th><th>Complaint Type</th><th>Assigned IO</th><th>Status</th><th>Last Updated</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>2024-HYD-0391</td><td class="text-normal">Rajesh Kumar Patel</td><td class="text-normal">Online Banking Fraud</td><td class="text-normal">Arjun Mehta</td>
+              <td class="text-normal"><span class="badge badge-high">Active</span></td><td>26 Mar 2025</td>
+            </tr>
+            <tr>
+              <td>2024-HYD-0388</td><td class="text-normal">Sunita Devi</td><td class="text-normal">UPI Phishing</td><td class="text-normal">Priya Sharma</td>
+              <td class="text-normal"><span class="badge badge-medium">Pending</span></td><td>22 Mar 2025</td>
+            </tr>
+            <tr>
+              <td>2024-HYD-0375</td><td class="text-normal">M/s Horizon Traders</td><td class="text-normal">Business Email Compromise</td><td class="text-normal">Arjun Mehta</td>
+              <td class="text-normal"><span class="badge badge-low">Closed</span></td><td>10 Mar 2025</td>
+            </tr>
+            <tr>
+              <td>2024-HYD-0369</td><td class="text-normal">Venkatesh Rao</td><td class="text-normal">Investment Scam (Crypto)</td><td class="text-normal">Sanjay Iyer</td>
+              <td class="text-normal"><span class="badge badge-high">Active</span></td><td>05 Mar 2025</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- REPORTS PAGE -->
+    <div id="page-reports" style="display:none;" class="fade-in">
+      <h1 style="font-size:18px;font-weight:700;margin-bottom:6px;">Reports</h1>
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:24px;">Generated investigation reports and export history.</p>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;">
+        <div class="card" style="padding:20px;">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;">
+            <div>
+              <div style="font-size:13.5px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">Case #0391 — Full Analysis Report</div>
+              <div style="font-size:12px;color:var(--text-secondary);">Generated 25 Mar 2025 · 14 pages</div>
+            </div>
+            <span class="badge badge-low">PDF</span>
+          </div>
+        </div>
+        <div class="card" style="padding:20px;">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;">
+            <div>
+              <div style="font-size:13.5px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">Case #0391 — Money Trail Summary</div>
+              <div style="font-size:12px;color:var(--text-secondary);">Generated 24 Mar 2025 · 6 pages</div>
+            </div>
+            <span class="badge badge-medium">DOCX</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS PAGE -->
+    <div id="page-settings" style="display:none;" class="fade-in">
+      <h1 style="font-size:18px;font-weight:700;margin-bottom:6px;">Settings</h1>
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:24px;">Portal configuration and preferences.</p>
+      <div class="card" style="max-width:520px;">
+        <div style="padding:14px 18px;border-bottom:1px solid var(--border-subtle);font-size:13px;font-weight:600;color:var(--text-primary);">Appearance</div>
+        <div style="padding:16px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border-subtle);">
+          <div><div style="font-size:13px;font-weight:500;color:var(--text-primary);">Dark Mode</div><div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Switch between light and dark interface</div></div>
+          <div class="toggle-track" id="darkToggle2" onclick="toggleDark()"><div class="toggle-thumb"></div></div>
+        </div>
+        <div style="padding:16px 18px;display:flex;align-items:center;justify-content:space-between;">
+          <div><div style="font-size:13px;font-weight:500;color:var(--text-primary);">Compact View</div><div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Reduce spacing in tables and panels</div></div>
+          <div class="toggle-track" id="compactToggle"><div class="toggle-thumb"></div></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ─── Dark mode ───────────────────────────────────────────────────
+let darkMode = false;
+function toggleDark() {
+  darkMode = !darkMode;
+  document.documentElement.className = darkMode ? 'dark' : 'light';
+  ['darkToggle','darkToggle2'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('on', darkMode);
+  });
+  if (pieChartObj) updateChartColors();
+  if (barChartObj) updateChartColors();
+}
+
+// ─── Page switching ───────────────────────────────────────────────
+function switchPage(page, el) {
+  document.querySelectorAll('[id^="page-"]').forEach(p => p.style.display = 'none');
+  document.getElementById('page-' + page).style.display = 'block';
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ─── Mock data ────────────────────────────────────────────────────
+const mockTransactions = [
+  { acc: '4023XXXXXXX8821', ben: 'Suresh Trading Co.', amount: '4,85,000', time: '2025-03-14 02:17', type: 'NEFT', status: 'flagged' },
+  { acc: '4023XXXXXXX8821', ben: 'Mehta Enterprises', amount: '2,50,000', time: '2025-03-14 02:45', type: 'IMPS', status: 'flagged' },
+  { acc: '9910XXXXXXX3311', ben: 'Alpha Solutions Pvt', amount: '1,20,000', time: '2025-03-15 11:30', type: 'RTGS', status: 'normal' },
+  { acc: '7712XXXXXXX0045', ben: 'K R Stores', amount: '3,70,000', time: '2025-03-16 01:08', type: 'NEFT', status: 'flagged' },
+  { acc: '9910XXXXXXX3311', ben: 'Prakash Pharma', amount: '88,500', time: '2025-03-17 14:22', type: 'UPI', status: 'normal' },
+  { acc: '3301XXXXXXX7723', ben: 'NovaTech Systems', amount: '6,00,000', time: '2025-03-18 03:55', type: 'IMPS', status: 'flagged' },
+  { acc: '4023XXXXXXX8821', ben: 'Laxmi Traders', amount: '1,95,000', time: '2025-03-19 09:10', type: 'NEFT', status: 'pending' },
+  { acc: '7712XXXXXXX0045', ben: 'Shree Finance Ltd', amount: '5,30,000', time: '2025-03-20 23:41', type: 'RTGS', status: 'flagged' },
+  { acc: '3301XXXXXXX7723', ben: 'Bharat Kapoor', amount: '45,000', time: '2025-03-21 16:05', type: 'UPI', status: 'normal' },
+  { acc: '5580XXXXXXX1189', ben: 'Smart Logistics', amount: '2,25,000', time: '2025-03-22 02:33', type: 'NEFT', status: 'flagged' },
+];
+
+const redFlags = [
+  { risk: 'high', icon: 'moon', title: 'High Midnight Transactions', desc: '6 transfers between 01:00–04:00 across 3 accounts in 48 hours.' },
+  { risk: 'high', icon: 'layers', title: 'Multi-Layer Fund Movement', desc: 'Funds traced through 4 shell accounts before reaching final recipient.' },
+  { risk: 'high', icon: 'zap', title: 'Dormant Account Activated', desc: 'Account 4023XXXXXXX8821 inactive for 11 months, received ₹7.35L in 3 days.' },
+  { risk: 'medium', icon: 'alert', title: 'Rapid Round-Trip Transfers', desc: 'Amount cycled back to source account within 72 hours via intermediaries.' },
+  { risk: 'medium', icon: 'user', title: 'New Beneficiary Added', desc: '3 new beneficiaries added and transacted within same session.' },
+];
+
+// ─── Upload simulation ────────────────────────────────────────────
+let uploading = false;
+function handleUpload(type) {
+  if (uploading) return;
+  uploading = true;
+
+  const bankBtn = document.getElementById('uploadBankBtn');
+  const cdrBtn  = document.getElementById('uploadCDRBtn');
+  const prog    = document.getElementById('uploadProgress');
+  const fill    = document.getElementById('progressFill');
+  const pct     = document.getElementById('uploadPct');
+  const label   = document.getElementById('uploadLabel');
+  const status  = document.getElementById('uploadStatus');
+
+  bankBtn.disabled = true; cdrBtn.disabled = true;
+  bankBtn.innerHTML = '<span class="spinner"></span> Processing…';
+
+  label.textContent = type === 'bank' ? 'Processing bank_statement_march.csv…' : 'Processing cdr_export_march.csv…';
+  prog.style.display = 'block';
+
+  const steps = [
+    [10, 'Parsing records…'],
+    [30, 'Validating account numbers…'],
+    [52, 'Running pattern detection…'],
+    [70, 'Flagging anomalies…'],
+    [88, 'Building transaction graph…'],
+    [100, 'Complete — data loaded.'],
+  ];
+
+  let i = 0;
+  const iv = setInterval(() => {
+    const [p, msg] = steps[i];
+    fill.style.width = p + '%';
+    pct.textContent = p + '%';
+    status.textContent = msg;
+    i++;
+    if (i >= steps.length) {
+      clearInterval(iv);
+      setTimeout(() => {
+        prog.style.display = 'none';
+        populateDashboard();
+        uploading = false;
+        bankBtn.disabled = false; cdrBtn.disabled = false;
+        bankBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Re-Upload Bank CSV`;
+      }, 600);
+    }
+  }, 420);
+}
+
+function populateDashboard() {
+  // Stats
+  animateCount('stat-txn', 0, 1247, 800);
+  animateCount('stat-flags', 0, 5, 600, '');
+  document.getElementById('stat-amount').textContent = '₹38.6L';
+  animateCount('stat-accounts', 0, 14, 700);
+  document.getElementById('delta-txn').innerHTML  = '<span class="stat-delta up">↑ 312 vs last month</span>';
+  document.getElementById('delta-flags').innerHTML = '<span class="stat-delta down">↑ 3 new this week</span>';
+  document.getElementById('delta-amount').innerHTML = '<span class="stat-delta down">Suspicious flow</span>';
+  document.getElementById('delta-accounts').innerHTML = '<span class="stat-delta up">6 flagged</span>';
+
+  renderCharts();
+  renderRedFlags();
+  renderTable();
+  renderTrail();
+}
+
+function animateCount(id, from, to, dur, prefix='') {
+  const el = document.getElementById(id);
+  const start = performance.now();
+  function step(now) {
+    const p = Math.min((now - start) / dur, 1);
+    el.textContent = prefix + Math.round(from + (to - from) * easeOut(p)).toLocaleString();
+    if (p < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+
+// ─── Charts ───────────────────────────────────────────────────────
+let pieChartObj = null, barChartObj = null;
+
+function getChartColors() {
+  return {
+    text: darkMode ? '#94a3b8' : '#6b7280',
+    grid: darkMode ? '#1e293b' : '#f0f1f3',
+  };
+}
+
+function renderCharts() {
+  const pieCvs = document.getElementById('pieChart');
+  const barCvs = document.getElementById('barChart');
+  document.getElementById('piePlaceholder').style.display = 'none';
+  document.getElementById('barPlaceholder').style.display = 'none';
+  pieCvs.style.display = 'block';
+  barCvs.style.display = 'block';
+
+  const cc = getChartColors();
+
+  if (pieChartObj) { pieChartObj.destroy(); }
+  pieChartObj = new Chart(pieCvs, {
+    type: 'doughnut',
+    data: {
+      labels: ['NEFT', 'IMPS', 'RTGS', 'UPI'],
+      datasets: [{
+        data: [38, 27, 21, 14],
+        backgroundColor: ['#1e5fad','#2d7dd2','#f59e0b','#64748b'],
+        borderWidth: 0,
+        hoverOffset: 4,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '65%',
+      plugins: {
+        legend: { position: 'bottom', labels: { color: cc.text, font: { family: 'Roboto', size: 11 }, padding: 12, boxWidth: 12 } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed}%` } }
+      }
+    }
+  });
+
+  const labels = ['Mar 3','Mar 6','Mar 9','Mar 12','Mar 15','Mar 18','Mar 21','Mar 24','Mar 27','Mar 30'];
+  const values = [42, 68, 53, 91, 74, 115, 88, 143, 97, 124];
+
+  if (barChartObj) { barChartObj.destroy(); }
+  barChartObj = new Chart(barCvs, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Transactions',
+        data: values,
+        backgroundColor: values.map((v, i) => v > 100 ? '#ef4444' : '#1e5fad'),
+        borderRadius: 4,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} transactions` } }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: cc.text, font: { family: 'Roboto', size: 10 } } },
+        y: { grid: { color: cc.grid }, ticks: { color: cc.text, font: { family: 'Roboto', size: 10 } } }
+      }
+    }
+  });
+}
+
+function updateChartColors() {
+  const cc = getChartColors();
+  if (pieChartObj) {
+    pieChartObj.options.plugins.legend.labels.color = cc.text;
+    pieChartObj.update();
+  }
+  if (barChartObj) {
+    barChartObj.options.scales.x.ticks.color = cc.text;
+    barChartObj.options.scales.y.ticks.color = cc.text;
+    barChartObj.options.scales.y.grid.color = cc.grid;
+    barChartObj.update();
+  }
+}
+
+// ─── Red flags ────────────────────────────────────────────────────
+function renderRedFlags() {
+  document.getElementById('flagCount').textContent = redFlags.length + ' alerts';
+  const body = document.getElementById('flagsBody');
+  body.innerHTML = redFlags.map(f => {
+    const bgMap = { high: '#fee2e2', medium: '#fef9c3', low: '#dcfce7' };
+    const clMap = { high: '#dc2626', medium: '#d97706', low: '#16a34a' };
+    const iconSvg = f.icon === 'moon'
+      ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`
+      : f.icon === 'layers'
+      ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>`
+      : f.icon === 'zap'
+      ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`
+      : f.icon === 'user'
+      ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`
+      : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+
+    return `<div class="alert-item">
+      <div class="alert-icon-wrap" style="background:${bgMap[f.risk]};color:${clMap[f.risk]};">${iconSvg}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:3px;">
+          <span style="font-size:12.5px;font-weight:600;color:var(--text-primary);">${f.title}</span>
+        </div>
+        <div style="font-size:11.5px;color:var(--text-secondary);line-height:1.5;">${f.desc}</div>
+        <span class="badge badge-${f.risk}" style="margin-top:6px;">${f.risk === 'high' ? '● High Risk' : f.risk === 'medium' ? '● Medium Risk' : '● Low Risk'}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── Table ────────────────────────────────────────────────────────
+let showFlagged = false;
+function renderTable(filter) {
+  const data = filter ? mockTransactions.filter(t => t.status === 'flagged') : mockTransactions;
+  document.getElementById('txnCount').textContent = `${data.length} of ${mockTransactions.length} records`;
+  const statusLabel = { flagged: 'Flagged', normal: 'Clear', pending: 'Pending' };
+  const body = document.getElementById('txnBody');
+  body.innerHTML = data.map(t => `
+    <tr>
+      <td>${t.acc}</td>
+      <td class="text-normal">${t.ben}</td>
+      <td>₹${t.amount}</td>
+      <td>${t.time}</td>
+      <td class="text-normal">${t.type}</td>
+      <td class="text-normal">
+        <span class="status-dot ${t.status}"></span>${statusLabel[t.status]}
+      </td>
+    </tr>`).join('');
+}
+
+function filterTable() {
+  showFlagged = !showFlagged;
+  document.getElementById('filterBtn').textContent = showFlagged ? 'Show All' : 'Flagged Only';
+  renderTable(showFlagged);
+}
+
+// ─── Money Trail SVG ──────────────────────────────────────────────
+function renderTrail() {
+  document.getElementById('trailPlaceholder').style.display = 'none';
+  document.getElementById('trailContainer').style.display = 'block';
+
+  const layers = [
+    [{ id: 'A001', label: 'Victim Account', sub: 'HDFC · 4023XXXXXXX8821', color: '#dc2626' }],
+    [
+      { id: 'B001', label: 'Intermediate 1', sub: 'SBI · 9910XXXXXXX3311', color: '#d97706' },
+      { id: 'B002', label: 'Intermediate 2', sub: 'Axis · 7712XXXXXXX0045', color: '#d97706' },
+    ],
+    [
+      { id: 'C001', label: 'Shell Co. A', sub: 'ICICI · 3301XXXXXXX7723', color: '#b45309' },
+      { id: 'C002', label: 'Shell Co. B', sub: 'PNB · 5580XXXXXXX1189', color: '#b45309' },
+      { id: 'C003', label: 'Shell Co. C', sub: 'BOB · 6620XXXXXXX4412', color: '#b45309' },
+    ],
+    [
+      { id: 'D001', label: 'Beneficiary 1', sub: 'Kotak · 8801XXXXXXX2201', color: '#1e5fad' },
+      { id: 'D002', label: 'Beneficiary 2', sub: 'Yes · 2210XXXXXXX9900', color: '#1e5fad' },
+    ],
+  ];
+
+  const nodeW = 148, nodeH = 56, hGap = 60, vGap = 34;
+  const layerMaxNodes = Math.max(...layers.map(l => l.length));
+  const svgW = layers.length * nodeW + (layers.length - 1) * hGap + 48;
+  const svgH = layerMaxNodes * nodeH + (layerMaxNodes - 1) * vGap + 60;
+
+  const svg = document.getElementById('trailSvg');
+  svg.setAttribute('viewBox', `0 0 ${svgW} ${svgH}`);
+  svg.setAttribute('width', svgW);
+  svg.setAttribute('height', svgH);
+
+  // compute positions
+  const positions = {};
+  layers.forEach((layer, li) => {
+    const x = 24 + li * (nodeW + hGap);
+    const totalH = layer.length * nodeH + (layer.length - 1) * vGap;
+    const startY = (svgH - totalH) / 2;
+    layer.forEach((node, ni) => {
+      positions[node.id] = { x, y: startY + ni * (nodeH + vGap), cx: x + nodeW / 2, cy: startY + ni * (nodeH + vGap) + nodeH / 2 };
+    });
+  });
+
+  // edges
+  const edges = [
+    ['A001','B001'], ['A001','B002'],
+    ['B001','C001'], ['B001','C002'],
+    ['B002','C002'], ['B002','C003'],
+    ['C001','D001'], ['C003','D002'], ['C002','D001'], ['C002','D002'],
+  ];
+
+  let markup = '';
+  // draw edges first
+  edges.forEach(([from, to]) => {
+    const f = positions[from], t = positions[to];
+    const mx = (f.cx + t.cx) / 2;
+    markup += `<path d="M ${f.cx} ${f.cy} C ${mx} ${f.cy}, ${mx} ${t.cy}, ${t.cx} ${t.cy}"
+      fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.5"/>`;
+  });
+
+  // amounts on edges (selective)
+  const amounts = { 'A001-B001': '₹4.85L', 'A001-B002': '₹2.50L', 'B002-C003': '₹3.70L', 'C003-D002': '₹6.00L' };
+  edges.forEach(([from, to]) => {
+    const key = `${from}-${to}`;
+    if (amounts[key]) {
+      const f = positions[from], t = positions[to];
+      const mx = (f.cx + t.cx) / 2;
+      const my = (f.cy + t.cy) / 2 - 8;
+      markup += `<rect x="${mx - 22}" y="${my - 9}" width="44" height="16" rx="4" fill="${darkMode ? '#1e293b' : '#fff'}" stroke="#e5e7eb" stroke-width="1"/>
+        <text x="${mx}" y="${my + 4}" text-anchor="middle" font-family="Roboto Mono,monospace" font-size="9" fill="#1e5fad" font-weight="500">${amounts[key]}</text>`;
+    }
+  });
+
+  // draw nodes
+  layers.forEach((layer, li) => {
+    // layer label
+    const lx = 24 + li * (nodeW + hGap) + nodeW / 2;
+    markup += `<text x="${lx}" y="14" text-anchor="middle" font-family="Roboto,sans-serif" font-size="9.5" font-weight="600" letter-spacing="0.8" text-transform="uppercase" fill="#9ca3af">LAYER ${li + 1}</text>`;
+
+    layer.forEach(node => {
+      const { x, y, cx } = positions[node.id];
+      const isDark = darkMode;
+      markup += `
+        <rect x="${x}" y="${y}" width="${nodeW}" height="${nodeH}" rx="8"
+          fill="${isDark ? '#1a2234' : '#fff'}" stroke="${node.color}" stroke-width="1.5"
+          style="filter:drop-shadow(0 2px 6px rgba(0,0,0,0.08))"/>
+        <circle cx="${x + 14}" cy="${y + nodeH/2}" r="4" fill="${node.color}"/>
+        <text x="${x + 24}" y="${y + 20}" font-family="Roboto,sans-serif" font-size="11" font-weight="600" fill="${isDark ? '#f1f5f9' : '#111827'}">${node.label}</text>
+        <text x="${x + 24}" y="${y + 35}" font-family="Roboto Mono,monospace" font-size="9" fill="#6b7280">${node.sub}</text>`;
+    });
+  });
+
+  svg.innerHTML = markup;
+}
+
+// ─── Init ─────────────────────────────────────────────────────────
+// hide chart canvases initially
+document.getElementById('pieChart').style.display = 'none';
+document.getElementById('barChart').style.display = 'none';
+
+// Compact toggle (cosmetic)
+document.getElementById('compactToggle').addEventListener('click', function() {
+  this.classList.toggle('on');
+});
+</script>
+</body>
+</html>
